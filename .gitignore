@@ -1,1 +1,2 @@
 ﻿*.lock
+hugo-source/resources/_gen/*
