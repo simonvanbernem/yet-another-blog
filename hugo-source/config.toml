@@ -1,4 +1,5 @@
 baseURL = "https://www.yet-another-blog.com"
+publishDir = "../docs"
 title = "Yet Another Blog"
 
 theme = "puppet"
