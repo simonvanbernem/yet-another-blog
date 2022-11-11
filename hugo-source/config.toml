@@ -17,7 +17,6 @@ enableEmoji = true
 ignoreErrors = ["error-remote-getjson"]
 
 disqusShortname = "yet-another-blog"
-googleAnalytics = "G-B67BXB63M2"
 
 [outputs]
 home = ["HTML", "JSON", "RSS"]
@@ -44,6 +43,7 @@ unsafe = true
 [params]
 author = "Simon van Bernem"
 keywords = "blog,developer,personal"
+googleAnalyticsID = "G-B67BXB63M2"
 
 useFaviconGenerator = true
 
