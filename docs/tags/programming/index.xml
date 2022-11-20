@@ -7,29 +7,14 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>Simon van Bernem</copyright>
-    <lastBuildDate>Fri, 11 Nov 2022 13:09:00 +0100</lastBuildDate><atom:link href="https://www.yet-another-blog.com/tags/programming/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 12 Nov 2022 14:53:00 +0100</lastBuildDate><atom:link href="https://www.yet-another-blog.com/tags/programming/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Test Post 1</title>
-      <link>https://www.yet-another-blog.com/test_1/</link>
-      <pubDate>Fri, 11 Nov 2022 13:09:00 +0100</pubDate>
+      <title>Porting 58000 lines of D and C&#43;&#43; to jai, Part 0: Why and How</title>
+      <link>https://www.yet-another-blog.com/porting_the_game_to_jai_part0/</link>
+      <pubDate>Sat, 12 Nov 2022 14:53:00 +0100</pubDate>
       
-      <guid>https://www.yet-another-blog.com/test_1/</guid>
-      <description>This is a test post
-Chapter 1good to know!
-Chapter 1.1very cool!
-Chapter 2great!</description>
-    </item>
-    
-    <item>
-      <title>Test Post 2</title>
-      <link>https://www.yet-another-blog.com/test_2/</link>
-      <pubDate>Thu, 10 Nov 2022 13:09:00 +0100</pubDate>
-      
-      <guid>https://www.yet-another-blog.com/test_2/</guid>
-      <description>This is another test post
-Chapter 3good to know!
-Chapter 3.1very cool!
-Chapter 4great!</description>
+      <guid>https://www.yet-another-blog.com/porting_the_game_to_jai_part0/</guid>
+      <description>In this series of blogposts, I will document my experience of porting the game that I am currently working on to the jai programming language. It&amp;rsquo;s currently written in mostly D and some C++ and comes in at exactly 58,620 lines of code (excluding libraries). I&amp;rsquo;ve planned on doing this for a long time and want to keep some sort of record of my expectations, the journey and the result. And since every self-respecting programmer needs to start a blog at some point - why not share the process with the internet?</description>
     </item>
     
   </channel>

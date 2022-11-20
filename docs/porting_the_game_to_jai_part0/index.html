@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  
+  
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B67BXB63M2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B67BXB63M2');
+</script>
+  
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  
+  
+    
+  
+
+  <title>Porting 58000 lines of D and C&#43;&#43; to jai, Part 0: Why and How | Yet Another Blog</title>
+
+  
+  <meta name="author" content="Simon van Bernem">
+  
+  <meta name="description" content="In this series of blogposts, I will document my experience of porting the game that I am currently working on to the jai programming language. It&rsquo;s currently written in mostly D and some C&#43;&#43; and comes in at exactly 58,620 lines of code (excluding libraries). I&rsquo;ve planned on doing this for a long time and want to keep some sort of record of my expectations, the journey and the result. And since every self-respecting programmer needs to start a blog at some point - why not share the process with the internet?">
+  <meta name="keywords" content="blog,developer,personal">
+
+  <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Porting 58000 lines of D and C&#43;&#43; to jai, Part 0: Why and How"/>
+<meta name="twitter:description" content="In this series of blogposts, I will document my experience of porting the game that I am currently working on to the jai programming language. It&rsquo;s currently written in mostly D and some C&#43;&#43; and comes in at exactly 58,620 lines of code (excluding libraries). I&rsquo;ve planned on doing this for a long time and want to keep some sort of record of my expectations, the journey and the result. And since every self-respecting programmer needs to start a blog at some point - why not share the process with the internet?"/>
+
+  <meta property="og:title" content="Porting 58000 lines of D and C&#43;&#43; to jai, Part 0: Why and How" />
+<meta property="og:description" content="In this series of blogposts, I will document my experience of porting the game that I am currently working on to the jai programming language. It&rsquo;s currently written in mostly D and some C&#43;&#43; and comes in at exactly 58,620 lines of code (excluding libraries). I&rsquo;ve planned on doing this for a long time and want to keep some sort of record of my expectations, the journey and the result. And since every self-respecting programmer needs to start a blog at some point - why not share the process with the internet?" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.yet-another-blog.com/porting_the_game_to_jai_part0/" /><meta property="article:section" content="" />
+<meta property="article:published_time" content="2022-11-12T14:53:00+01:00" />
+<meta property="article:modified_time" content="2022-11-12T14:53:00+01:00" />
+
+
+
+  <link rel="stylesheet" href="/css/bootstrap.min.css"  crossorigin="anonymous">
+  
+  <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet"
+    type="text/css">
+
+  
+  
+  <link rel="stylesheet" href="/sass/main.css">
+
+  
+  <link rel="stylesheet" href="/zoomjs/zoom.min.css">
+
+  
+
+  <script src=/js/lazysizes.min.js></script>
+
+  
+  
+
+  
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+
+</head>
+
+
+
+<body ontouchstart="">
+
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top invert">
+  <div class="container-fluid">
+    
+    <div class="navbar-header page-scroll">
+      <button type="button" class="navbar-toggle">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="https://www.yet-another-blog.com">Yet Another Blog</a>
+    </div>
+    
+    <div id="huxblog_navbar">
+      <div class="navbar-collapse">
+        <ul class="nav navbar-nav navbar-right">
+          
+
+          <li class="search-icon">
+            <a href="javascript:void(0)">
+              <i class="fa fa-search"></i>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+  </div>
+  
+</nav>
+<script>
+  
+  
+  
+  var $body = document.body;
+  var $toggle = document.querySelector(".navbar-toggle");
+  var $navbar = document.querySelector("#huxblog_navbar");
+  var $collapse = document.querySelector(".navbar-collapse");
+
+  var __HuxNav__ = {
+    close: function () {
+      $navbar.className = " ";
+      
+      setTimeout(function () {
+        
+        if ($navbar.className.indexOf("in") < 0) {
+          $collapse.style.height = "0px";
+        }
+      }, 400);
+    },
+    open: function () {
+      $collapse.style.height = "auto";
+      $navbar.className += " in";
+    },
+  };
+
+  
+  $toggle.addEventListener("click", function (e) {
+    if ($navbar.className.indexOf("in") > 0) {
+      __HuxNav__.close();
+    } else {
+      __HuxNav__.open();
+    }
+  });
+
+  
+
+  document.addEventListener("click", function (e) {
+    if (e.target == $toggle) return;
+    if (e.target.className == "icon-bar") return;
+    __HuxNav__.close();
+  });
+</script>
+  
+<div class="search-page">
+  <div class="search-icon-close-container">
+    <span class="search-icon-close">
+      <i class="fa fa-chevron-down"></i>
+    </span>
+  </div>
+  <div class="search-main container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <form></form>
+        <input type="text" id="search-input" placeholder="$ grep...">
+        </form>
+        <div id="search-results" class="mini-post-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+  
+
+
+<style type="text/css">
+  header.intro-header {
+    position: relative;
+    background-image: url('');
+  }
+</style>
+
+<header class="intro-header style-text">
+
+  <div class="header-mask"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-heading">
+          <div class="tags">
+            
+            <a class="tag" href="/tags/programming/" title="programming">programming</a>
+            
+            <a class="tag" href="/tags/game/" title="game">game</a>
+            
+            <a class="tag" href="/tags/jai/" title="jai">jai</a>
+            
+          </div>
+          <h1>Porting 58000 lines of D and C&#43;&#43; to jai, Part 0: Why and How</h1>
+          <h2 class="subheading"></h2>
+          <span class="meta">
+            Posted by  Simon van Bernem 
+            on Sat, Nov 12, 2022
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+  
+
+
+<article>
+  <div class="container">
+    <div class="row">
+
+      
+      <div class="
+              col-lg-8 col-lg-offset-2
+              col-md-10 col-md-offset-1
+              post-container">
+        <p>In this series of blogposts, I will document my experience of porting <a href="https://www.spaced-game.com" target="_blank">the game that I am currently working on</a> to the jai programming language. It&rsquo;s currently written in mostly D and some C++ and comes in at exactly 58,620 lines of code (excluding libraries). I&rsquo;ve planned on doing this for a long time and want to keep some sort of record of my expectations, the journey and the result. And since every self-respecting programmer needs to start a blog at some point - why not share the process with the internet?</p>
+<h3 id="why">Why<a class="anchorjs-link" href="#why"></a></h3><p>You may rightfully ask yourself: Why would anyone port a program of this size to another programming language? Just finish the project and then move on to the new language. In my case it&rsquo;s for a couple reasons:</p>
+<ul>
+<li>The current setup causes me a lot of grief in day-to-day work</li>
+<li>I have systems in place to help me porting, so I expect porting to go <em>somewhat</em> smoothly</li>
+<li>jai seems way more attractive to me than either C++ or D</li>
+</ul>
+<p>And the most important reason: I just feel like it!</p>
+<h4 id="why-not-c">Why not C++<a class="anchorjs-link" href="#why-not-c"></a></h4><p>Much has been said about the shortcomings of C++, so I&rsquo;m not going to go into great detail here. In short, C++ has accumulated decades of bad decisions without any mechanism to get rid of them. The standard library is a disaster, (successfully) using other people’s code is comically hard and somehow each new addition to the language always seems to come with a catch. C++ is right in the spot where its shortcomings cause me a lot of pain, but at the same time it&rsquo;s not bad enough that moving on is a no-brainer. But since it&rsquo;s also not evolving in a direction I find promising, I don&rsquo;t expect things to get better and want to leave the C++ ecosystem.</p>
+<h4 id="why-not-d">Why not D<a class="anchorjs-link" href="#why-not-d"></a></h4><p>When I started working on my game in 2019, all the reasons for leaving C++ were already true, but I wasn&rsquo;t sure where to go. Nevertheless, I settled on D since the basic pitch seemed reasonable: C++, but without the bad parts<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>. Unfortunately, it turned out that we disagree on what <em>the bad parts</em> are and that D has various shortcomings that C++ doesn&rsquo;t.<br>
+That said, D definitely has some advantages over C++, like more powerful metaprogramming, no need for headers, no uninitialized values and more. But unfortunately, these upsides are outweighed by the downsides.<br>
+After bouncing between the two available D compilers for Windows (dmd and ldc2) for about 4 years, I find the state of D on Windows to resemble something I would expect from a hobby project, or an immature piece of software early in its development, but not from a language with more than 20 years of development behind it. As of now, I wouldn&rsquo;t recommend anyone to use D for serious projects on Windows. Staying with C++ is the better choice. From the following problems that I have encountered over the years, by far the biggest one is that <strong>debug info on Windows is completely broken</strong>:</p>
+<ul>
+<li>90% of times, the <code>this</code> pointer is missing or wrong</li>
+<li>variables on function stacks are often partially or completely missing or wrong</li>
+<li><strong>values of variables are sometimes reported wrong without any other visible issues</strong></li>
+<li>static foreach expansions are not handled well and confuse the debugger</li>
+<li>mixins (D&rsquo;s macro equivalent) generate debug info in a way that causes the debugger to not find the correct file (so you step through disassembly)</li>
+<li>moving the instruction pointer back to the previous line in visual studio often crashes the program on the next instruction</li>
+</ul>
+<p>On the D Language Code Club discord, I was told that &ldquo;DMD has historically had a lot of issues with the quality of its debug info&rdquo; and that it&rsquo;s being worked on, but unfortunately most of the points above apply to both compilers, not just dmd. Aside from debugging, there are other issues and shortcomings, to a significant part in metaprogramming:</p>
+<ul>
+<li>different compiler phases interact in weird ways that lead to surprises in metaprogramming, while generating misleading errors<sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup><sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup><sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup></li>
+<li>ldc2 is awfully slow to compile<sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>, but sometimes the only choice because dmd has bugs<sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup></li>
+<li>D offers a <em>betterC</em> mode that among other things disables garbage collection. However, when using this mode, the standard library does not compile and meta programming<sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup> is significantly hampered.</li>
+<li>the documentation is lacking</li>
+<li>&hellip; and about twenty other increasingly nitpicky issues.</li>
+</ul>
+<p>All this is to say: While D is genuinely better at some things than C++, the issues pile up in other places and make working with it very painful. Bad debug info and the de-facto need for garbage collection are dealbreakers, but there&rsquo;s also the general feeling that the D creators&rsquo; vision of what a fixed C++ looks like is just vastly different from mine. Since I want to improve on C++, not just trade its problems for others, D is not the place to stay for me. I have severe trust issues with debuggers now.</p>
+<h4 id="why-jai">Why jai<a class="anchorjs-link" href="#why-jai"></a></h4><p>This leads us to jai<sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup>. Jonathan Blow started development on this language in 2014 and has kept the compiler behind closed doors<sup id="fnref:9"><a href="#fn:9" class="footnote-ref" role="doc-noteref">9</a></sup> until December 2019, where a closed beta began. This closed beta is still ongoing and about two months ago I was invited to it. Jai was born out of frustration over C++ and as opposed to D, it has evolved in a direction that I think could make a meaningful improvement over C++. In my eyes, the most important ones are faster compilation and allowing metaprogramming via unrestricted compile time execution.<br>
+It is important to note that we are not talking about 20% faster compilation and a slight increase of what you can do in metaprogramming. We are talking about <em>10-100x</em> faster compilation and being able to do <em>anything</em><sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup> during compilation. Especially meta programming in conjunction with a compile-time compiler API has far reaching consequences, like eliminating the need for build systems or enabling complex, non-heuristic custom checks. On top of that, there are other improvements over C++ like better defaults, easier syntax, a more useful standard library, named function parameters, the context<sup id="fnref:11"><a href="#fn:11" class="footnote-ref" role="doc-noteref">11</a></sup>, <code>using</code><sup id="fnref:12"><a href="#fn:12" class="footnote-ref" role="doc-noteref">12</a></sup> and more. I hope for a variety of benefits from porting my game from D to jai:</p>
+<ul>
+<li>Reducing compile times from about 60s right now to under 5s, hopefully around 1s</li>
+<li><em>having debuggers work</em></li>
+<li>Replacing build-scripts with jai code</li>
+<li>Catching more errors by introducing custom compilation checks using metaprogramming</li>
+<li>Replacing complex metaprogramming code with simpler, imperative code</li>
+<li>Reducing noise in the code due to various syntax improvements</li>
+<li>Removing duplication that is unavoidable when using multiple languages</li>
+</ul>
+<p>Part of the reason this blogpost exist is because I don&rsquo;t know yet whether these benefits will come to fruition in the manner I hope. Looking back at my initial expectations and checking how much they have been fulfilled will be an interesting exercise.</p>
+<h4 id="why-not-something-else">Why not something else<a class="anchorjs-link" href="#why-not-something-else"></a></h4><p>Ok, so I don&rsquo;t like D and C++ and jai looks good. But what about all the other languages?</p>
+<p>The largest elephant in the room to address is probably Rust. It has gained a lot of momentum and a zealous community, but personally I simply don&rsquo;t think it gets the tradeoffs right. Its proponents seem to share a strict memory-safety-is-the-only-way mentality, which I can vaguely relate to, given the many vulnerabilities that are attributed to memory safety, but this overlooks other approaches to making safe and high-quality software that are less extreme. For example, I believe a big chunk of these vulnerabilities would not exist if C and C++ (the most prominent &ldquo;unsafe&rdquo; languages for sure) simply didn&rsquo;t have zero-terminated string, initialized values by default, had a proper pointer+length type thus replacing 90% of pointer arithmetic with easily bounds-checkable code, and had established a culture that discouraged the prevalent ad-hoc style of memory management. In addition to this, I think the most important reason we have so many vulnerabilities (and bugs in general) is completely disregarded in the hunt for &ldquo;safe&rdquo; code: culturally tolerated and even encouraged complexity<sup id="fnref:13"><a href="#fn:13" class="footnote-ref" role="doc-noteref">13</a></sup>. In conclusion, putting up with Rusts compile times and submitting to the borrow checker seems like an extreme solution that doesn&rsquo;t address the most important problem, which is a cultural one. Jai on the other hand is extremely concerned with complexity and tries to get the cultural part right.</p>
+<p>For other less popular options like for example Zig, all I can say is that while they might have enormous potential, I simply wasn&rsquo;t totally convinced that they would be the right choice. That doesn&rsquo;t mean they are bad or anything, but it simply didn&rsquo;t fully click.</p>
+<h3 id="how">How<a class="anchorjs-link" href="#how"></a></h3><p>In the beginning I hinted at expecting the porting process to go <em>somewhat smoothly</em> (which I&rsquo;m sure I won&rsquo;t regret later). The reason for this is that I have two systems in my game that will hopefully be immensely helpful in this endeavor:</p>
+<ul>
+<li>The game records the inputs (HID, loaded files, network, &hellip;) of a play-session into a file and replay them later. When replaying, feeding recorded input into the deterministic game loop leads to the exact same state, down to the bit.</li>
+<li>The game hashes game state at various points during execution and saves these hashes to a different file. When replaying, the contents of this file can be used to check that the execution of the replayed session exactly matches the original execution.</li>
+</ul>
+<p>There are a couple of nuances to both features, but they are not important for the big picture. Relying on these features, my plan to porting is the following:</p>
+<ul>
+<li>Copy a small piece of code from D or C++ to jai and make it compile.</li>
+<li>Call the new jai code instead of the old D or C++ code.</li>
+<li>Replay a recorded game session.</li>
+<li>If the replay diverged, porting introduced a bug. Fix the bug.</li>
+<li>If the replay didn&rsquo;t diverge, porting was successful. repeat.</li>
+</ul>
+<p>The key questions for how well this approach will work are:</p>
+<ul>
+<li>Do all introduced bugs actually cause the game state to diverge in a noticeable manner?</li>
+<li>Can the code be ported in small enough increments so that knowing a bug exists makes finding the bug itself easier?</li>
+</ul>
+<p>The first question depends on how much of the code is covered by state hashing. There are parts of code that need to know if the game is replaying or not, and these parts will internally behave differently and thus can&rsquo;t be hashed meaningfully. For example, the write-file function just discards any data when replaying, so if porting introduces a bug in writing files, it won&rsquo;t be noticed by hashing. Luckily, most code does not fall under this category. Initially hashing was only used sparsely in the codebase, in places like physics simulation (which already was super helpful!), but lately I managed to extend this to including hashing the size and capacity of a dynamic array when inserting into it. This means: When a bug causes any insert into a dynamic array to change <em>anywhere in the entire game logic</em>, it will be noticed. Since basically everything uses dynamic arrays in my code, even the minor changes in intermediary behavior of a big and complicated math algorithm should get noticed.</p>
+<p>The second question is a classical programming problem: How well decoupled is your code? This is going to be super interesting because I am going to dig up all the accidental complexity in my codebase that I had forgotten about. An obvious problem are templated functions: These can&rsquo;t be ported straightforwardly because the function definition and call sites have to be <em>in the same compiler</em> for templates to work, unless you manually instantiate the template. There&rsquo;s quite some amount of templated code in the codebase, but it is relatively isolated to things like containers or serialization, so I hope this doesn&rsquo;t cause too big of a headache.</p>
+<h3 id="onwards">Onwards<a class="anchorjs-link" href="#onwards"></a></h3><p>Are you still here? I&rsquo;m sorry, this has gotten way too long. Let me reward you with some pretty stats and pictures! First of all, this is the current state of the codebase:</p>
+<pre><code>-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+D                               27          10201           3104          32396
+C++                              4           2343            411           7807
+C/C++ Header                     1            533             75           1750
+-------------------------------------------------------------------------------
+SUM:                            32          13077           3590          41953
+-------------------------------------------------------------------------------
+</code></pre>
+<p>Overall, 45701 lines of D and 12919 lines of C++, for a total of 58620 lines. Compile times are the following:</p>
+<table>
+<thead>
+<tr>
+<th>compiler</th>
+<th>loc</th>
+<th>debug</th>
+<th>debug loc/s</th>
+<th>release</th>
+<th>release loc/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cl  (C++, v19.33.31630)</td>
+<td>12919</td>
+<td>2.9s</td>
+<td>4,454</td>
+<td>5.6s</td>
+<td>2,306</td>
+</tr>
+<tr>
+<td>ldc2 (D &amp; linking, v1.27.1)</td>
+<td>45701</td>
+<td>59s</td>
+<td>774</td>
+<td>317s</td>
+<td>144</td>
+</tr>
+<tr>
+<td>total</td>
+<td>58620</td>
+<td>61.9s</td>
+<td>947</td>
+<td>322.6s</td>
+<td>182</td>
+</tr>
+</tbody>
+</table>
+<p>It regularly happens that ldc2 takes 3 minutes in debug mode, because it peaks at around 8GB of RAM, which can easily saturate my 16GB laptop when a browser is open. Release mode is even worse at 11.5GB.<br>
+To keep track of the porting progress (and because I love pretty pictures), I generated the following plots of the repository that will be kept up to date as we go along:</p>
+<p><figure>
+  <a class="paragraph-image">
+    <img data-src="/2022_11_11_plot_by_quarter.png" data-action="zoom" alt="Lines of code by quarter over time"  class="lazyload">
+  </a>
+  
+</figure>
+<figure>
+  <a class="paragraph-image">
+    <img data-src="/2022_11_11_plot_by_extensions.png" data-action="zoom" alt="Lines of code by filetype over time"  class="lazyload">
+  </a>
+  
+</figure></p>
+<p>If everything goes to plan, then in both graphs all existing color bands should be replaced by new ones. Exciting!<br>
+And lastly, let me put numbers on two of the benefits I&rsquo;m hoping for, so it&rsquo;s easy to say just <em>how</em> wrong I was in the end:</p>
+<ul>
+<li>I expect this to take 160 hours (one month of 40-hour weeks) of work. I&rsquo;m horrible at estimating time, but one month seems like a long time.</li>
+<li>I expect the compile time to go from about 1 minute to at most 5s, hopefully around 1s</li>
+</ul>
+<p>With that it&rsquo;s off to the races! See you next time!</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>At least that was my perception of it.&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>like order independent declaration in global scopes sometimes breaking with <code>mixin</code>s&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>or like namespaced names not resolving in mixins unless you use a <a href="https://dlang.org/spec/lex.html#token_strings" target="_blank">special kind of string literal</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:4">
+<p>or like <code>static foreach</code> not being able to insert multiple <code>else if</code>s after an <code>if</code>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:5">
+<p>It takes 1 minute in debug and over 5 minutes in release mode to compile the game. There&rsquo;s also the issue of ldc2 somehow needing 8GB of RAM in debug and 11.5GB in release mode for compiling a 20MB executable from 2MB of source files, thus causing regular near-death experiences for my laptop.&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:6">
+<p>I&rsquo;ve encountered a couple of bugs over the years that stopped my program from building, the latest one being this <a href="https://issues.dlang.org/show_bug.cgi?id=23195" target="_blank">codegen bug</a> when interfacing with C++.&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:7">
+<p>Disabling the garbage collector not only disables it for your compiled code, but also for the code executing at compile time. One major way of metaprogramming in D is injecting new code into the program. That code is a string, and those strings need to be concatenated, and string concatenation uses the garbage collector. So &hellip; it just doesn&rsquo;t compile.&#160;<a href="#fnref:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:8">
+<p>actually, Jon only seems to call it &ldquo;the language&rdquo; and has hinted at jai only being a working title&#160;<a href="#fnref:8" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:9">
+<p>at least <em>the executable</em> was kept behind closed doors. There were <a href="https://www.youtube.com/watch?v=TH9VCN6UkyQ&amp;list=PLmV5I2fxaiCKfxMBrNsU1kgKJXD3PkyxO" target="_blank">talks, demos</a> and <a href="https://www.youtube.com/watch?v=wWTon5J2uhs&amp;list=PLmV5I2fxaiCIZVTLzofsocka2LvWBFvBa" target="_blank">development streams</a> from the very beginning.&#160;<a href="#fnref:9" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:10">
+<p><a href="https://youtu.be/UTqZNujQOlA?t=3109" target="_blank">Back in 2014 Jon demonstrated this point</a> by having the program fail to compile unless you reach a certain score in a game that is executed <em>at compile time</em>.&#160;<a href="#fnref:10" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:11">
+<p><strong>Why is there a single language without the ability to pass parameters by name in 2022??</strong> Seriously. I find this infuriating. It&rsquo;s so tedious and error prone if you only want to change the 6th parameter and all others have defaults! Why do they make me pass the defaults to the 5 other parameters in between?&#160;<a href="#fnref:11" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:12">
+<p>The context is a data structure that for example lets you modify things like logging functions and allocators in such a way that libraries and leaf code don&rsquo;t need to know about the changes.&#160;<a href="#fnref:12" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:13">
+<p>This happens everywhere, from encouraging to layer more abstractions instead of fixing underlying issues (&ldquo;reinvent the wheel&rdquo;), pulling in everything and the kitchen sink via package managers and perpetuating existing problems by raising software and their creators on an untouchable pedestal (&ldquo;shoulders of giants&rdquo;), not to be criticized in their vast wisdom and impossible to improve upon. While well intentioned, this discourages people from even trying. <em>How could you be so arrogant to even assume you could match or outdo the giants</em>?&#160;<a href="#fnref:13" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+
+        <hr style="visibility: hidden;" />
+        <ul class="pager">
+          
+          
+        </ul>
+        <hr style="visibility: hidden;" />
+
+        
+        
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "yet-another-blog" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+
+
+
+      </div>
+
+      
+      
+      
+      <div class="
+              col-lg-2 col-lg-offset-0
+              visible-lg-block
+              sidebar-container
+              catalog-container">
+        <div class="side-catalog">
+          <hr class="hidden-sm hidden-xs">
+          <h5>
+            <a class="catalog-toggle" href="#">CATALOG</a>
+          </h5>
+          <ul class="catalog-body"></ul>
+        </div>
+      </div>
+      
+      
+      <div class="
+              col-lg-8 col-lg-offset-2
+              col-md-10 col-md-offset-1
+              sidebar-container">
+
+        
+        
+        <section>
+  
+  
+  <hr class="hidden-sm hidden-xs">
+  
+  <h5>FEATURED TAGS</h5>
+  <div class="tags">
+    
+    <a href="/tags/game/">game</a>
+    
+    <a href="/tags/jai/">jai</a>
+    
+    <a href="/tags/programming/">programming</a>
+    
+  </div>
+</section>
+
+        
+        
+
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+  
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        
+        
+
+
+<ul class="list-inline text-center">
+
+  
+  <li>
+    <a href=/index.xml>
+      <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+      </span>
+    </a>
+  </li>
+  
+  
+  <li>
+    <a href="https://twitter.com/pulp_user">
+      <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+      </span>
+    </a>
+  </li>
+  
+  
+  
+  
+  
+  
+</ul>
+        <p class="copyright text-muted">
+          Simon van Bernem  
+          <br>
+          Powered by <a href="https://gohugo.io">Hugo</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src=/js/jquery.min.js></script>
+<script src=/js/bootstrap.min.js crossorigin="anonymous"></script>
+
+
+
+<script src="/js/hux-blog.min.73a6a8d8df45293e042d15867416f603045bbeb98406731e5022d6c60388cd9d.js"></script>
+
+
+<script src=/js/simple-jekyll-search.min.js></script>
+
+
+<script src="/js/search.min.53bce5da475b4d362500e5ce5dddfa22e20e1b9018777411d2020b4b839c9310.js"></script>
+
+
+
+
+
+
+<script type="text/javascript">
+  function generateCatalog(selector) {
+    _containerSelector = 'div.post-container'
+    
+    var P = $(_containerSelector), a, n, t, l, i, c;
+    a = P.find('h1,h2,h3,h4');
+    
+    $(selector).html('')
+    
+    a.each(function () {
+      n = $(this).prop('tagName').toLowerCase();
+      i = "#" + $(this).prop('id');
+      t = $(this).text();
+      c = $('<a href="' + i + '" rel="nofollow">' + t + '</a>');
+      l = $('<li class="' + n + '_nav"></li>').append(c);
+      $(selector).append(l);
+    });
+    return true;
+  }
+
+  generateCatalog(".catalog-body");
+
+  
+  $(".catalog-toggle").click((function (e) {
+    e.preventDefault();
+    $('.side-catalog').toggleClass("fold")
+  }))
+</script>
+
+
+<script type="text/javascript" src='/js/jquery.nav.min.ade6bde8f9fcc6a4b40852cb892e9f5912340ab8fe1305149d917fdd16fffd8d.js'></script>
+<script>
+   $(document).ready( function () {
+    $('.catalog-body').onePageNav({
+      currentClass: "active",
+      changeHash: !1,
+      easing: "swing",
+      filter: "",
+      scrollSpeed: 700,
+      scrollOffset: 0,
+      scrollThreshold: .2,
+      begin: null,
+      end: null,
+      scrollChange: null,
+      padding: 80
+    });
+  });
+</script>
+
+
+
+
+
+
+
+
+
+<script src="/zoomjs/zoom.min.js"></script>
+
+</body>
+
+</html>
